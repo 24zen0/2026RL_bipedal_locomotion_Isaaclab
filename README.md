@@ -1,142 +1,123 @@
-<p align="center">
-    <img alt="SUSTech" src="./media/SUSTech_University_Logo.png" height="200">
-    <img alt="CLEARLAB" src="./media/clearlab.png" height="200">
-</p>
+# Point-Foot Locomotion: Reward Design and Simulation Evaluation
 
-# Bipedal Robot RL Locomotion Learning Project
+Point-foot locomotion experiments in Isaac Lab, covering velocity tracking, external-push recovery, and terrain traversal.
 
-[![IsaacSim](https://img.shields.io/badge/IsaacSim-4.5.0-silver.svg)](https://docs.omniverse.nvidia.com/isaacsim/latest/overview.html)
-[![Isaac Lab](https://img.shields.io/badge/IsaacLab-2.1.0-silver)](https://isaac-sim.github.io/IsaacLab)
-[![Python](https://img.shields.io/badge/python-3.10-blue.svg)](https://docs.python.org/3/whatsnew/3.10.html)
-[![Linux platform](https://img.shields.io/badge/platform-linux--64-orange.svg)](https://releases.ubuntu.com/20.04/)
-[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://pre-commit.com/)
-[![License](https://img.shields.io/badge/license-MIT-yellow.svg)](https://opensource.org/license/mit)
+[Technical report](https://24zen0.github.io/files/RL_Locomotion_Technical_Report.pdf) · [Project demos](https://24zen0.github.io/#projects)
+
+![Velocity tracking](media/speed_tracking.PNG)
 
 ## Overview
 
-This repository provides a modular framework for reinforcement learning (RL) research and development on bipedal robots [limxdynamics TRON1](https://www.limxdynamics.com/en/tron1), leveraging [IsaacLab](https://github.com/isaac-sim/IsaacLab) for high-fidelity simulation. It supports training, playing, and deployment of locomotion policies for various bipedal robots (pointfoot, solefoot, wheelfoot) across flat, rough, and stair terrains.
+This project investigates how reward design affects locomotion accuracy and recovery behavior. It builds on the [RL bipedal locomotion framework](https://github.com/81578823/RL_bipedal_locomotion_Isaaclab) and uses PPO with an asymmetric actor–critic architecture in Isaac Lab.
 
-**Keywords:** isaaclab, locomotion, bipedal, pointfoot, TRON1
+## My work
+
+- Compared velocity-tracking reward configurations and implemented an axis-aligned stillness term to reduce unintended motion along uncommanded axes.
+- Evaluated external-push recovery under different survival and gait-regularization rewards.
+- Configured a more challenging point-foot terrain setup and analyzed the results in the technical report.
+
+These point-foot simulation experiments follow my wheel-legged TRON Camp work. The [project demos](https://24zen0.github.io/#projects) also include the wheel-legged hardware deployment.
+
+## Velocity-tracking results
+
+For the linear-command evaluation, the linear and angular tracking weights were held at 12 and 6. Adding an axis-aligned stillness weight of −0.5 reduced tracking errors in all three reported components:
+
+| Tracking MSE | Without stillness term | With stillness term |
+| --- | ---: | ---: |
+| Forward velocity | 0.0679 | 0.0323 |
+| Lateral velocity | 0.0783 | 0.0333 |
+| Yaw rate | 0.0484 | 0.0412 |
+
+The [technical report](https://24zen0.github.io/files/RL_Locomotion_Technical_Report.pdf) presents the full reward comparisons, push-recovery experiments, and terrain evaluation.
+
+## Environment
+
+- Isaac Lab 2.1.0
+- Isaac Sim 4.5.0
+- Python 3.10
 
 ## Installation
 
-- Install Isaaclab by following the [official installation guidance](https://isaac-sim.github.io/IsaacLab/v2.1.0/source/setup/installation/binaries_installation.html). We recommend using the miniconda installation as it simplifies calling Python scripts from the terminal.
-
-**Attention:** Please switch to 2.1.0 branch in the official guidance if you want to use the learning project directly. **This project is designed for Isaaclab 2.1.0 + isaacsim 4.5.0.**
-
-- Clone the repository:
+Install Isaac Lab using the [version 2.1.0 installation guide](https://isaac-sim.github.io/IsaacLab/v2.1.0/source/setup/installation/binaries_installation.html), then clone this repository:
 
 ```bash
-# Option 1: HTTPS
-git clone https://github.com/81578823/RL_bipedal_locomotion_Isaaclab.git
+git clone https://github.com/24zen0/2026RL_bipedal_locomotion_Isaaclab.git
+cd 2026RL_bipedal_locomotion_Isaaclab
+conda activate isaaclab
 
-# Option 2: SSH
-git clone git@github.com:81578823/RL_bipedal_locomotion_Isaaclab.git
-```
-
-```bash
-# Enter the repository
-conda activate isaaclab     # Or virtual environment you have created
-cd RL_bipedal_locomotion_Isaaclab
-```
-
-- Using a python interpreter that has IsaacLab installed, install the library
-
-```bash
 python -m pip install -e exts/bipedal_locomotion
+python -m pip install -e rsl_rl
 ```
 
-- To use the mlp branch, install the library
+Run the following commands from the repository root with the Isaac Lab environment activated.
+
+## Training
 
 ```bash
-cd RL_bipedal_locomotion_Isaaclab/rsl_rl
-python -m pip install -e .
+# Flat-ground locomotion
+python scripts/rsl_rl/train.py \
+  --task=Isaac-Limx-PF-Blind-Flat-v0 \
+  --headless
+
+# Rough-terrain locomotion
+python scripts/rsl_rl/train.py \
+  --task=Isaac-Limx-PF-Blind-Rough-v0 \
+  --headless
 ```
 
-## Set up IDE for convenience (Optional)
+Training options include `--num_envs`, `--max_iterations`, `--save_interval`, and `--seed`.
 
-To setup the IDE, please follow these instructions:
-
-- Replace the path in .vscode/settings.json with the Isaaclab and python paths used by the user. This way, when the user retrieves the official functions or variables of Isaaclab, they can directly jump into the definition of the configuration environment code.
-
-And then you can use the ```F5``` key to debug this project, which will launch debug function following the setup in ```.vscode/launch.json```. You can modify launch.json to debug new tasks you design.
-
-## Train a bipedal robot agent
-
-- Use the `scripts/rsl_rl/train.py` script to run a simple robot training task, specifying the task:
+## Evaluation
 
 ```bash
-python scripts/rsl_rl/train.py --task=Isaac-Limx-PF-Blind-Flat-v0 --headless
+# Flat-ground evaluation
+python scripts/rsl_rl/play.py \
+  --task=Isaac-Limx-PF-Blind-Flat-Play-v0 \
+  --num_envs=10
 
-#or the following for rough terrains
-
-python scripts/rsl_rl/train.py --task=Isaac-Limx-PF-Blind-Rough-v0 --headless
+# Rough-terrain evaluation with a saved checkpoint
+python scripts/rsl_rl/play.py \
+  --task=Isaac-Limx-PF-Blind-Rough-Play-Near-v0 \
+  --checkpoint_path=/path/to/checkpoint.pt \
+  --num_envs=1 \
+  --video \
+  --video_length=800
 ```
 
-- The following arguments can be used to customize the training:
-    * --headless: Run the simulation in headless mode
-    * --num_envs: Number of parallel environments to run
-    * --max_iterations: Maximum number of training iterations
-    * --save_interval: Interval to save the model
-    * --seed: Seed for the random number generator
+Keyboard controls:
 
-## Play the trained model
+| Keys | Action |
+| --- | --- |
+| W / S | Forward / backward command |
+| A / D | Left / right command |
+| 1 / 2 / 3 / 4 | Forward / left / backward / right push |
 
-- To play a trained model:
+Push settings are configured in `play.py`.
 
-```bash
-#this is for flat terrain
-python scripts/rsl_rl/play.py --task=Isaac-Limx-PF-Blind-Flat-Play-v0 --num_envs=10
+## Demonstrations
 
-#this is for multi-terrains
-python3 scripts/rsl_rl/play.py   --task=Isaac-Limx-PF-Blind-Rough-Play-Near-v0   --checkpoint_path=/path_to_ckpt  --num_envs=1 --video --video_length 800
-```
+### Multi-terrain traversal
 
-- You can customize `play.py` with:
-  * `--num_envs`: number of parallel environments
-  * `--headless`: run without rendering
-  * `--checkpoint_path`: checkpoint to load
-  * `--video`: enable video capture (recommended)
-  * `--video_length`: number of steps to record
+![Multi-terrain traversal](media/multi-terrain-traversal.gif)
 
-- Keyboard/gamepad controls:
-  * Directions (WASD): W forward, A left, S back, D right
-  * Gamepad: supported when connected
-  * Push forces: 1 forward, 2 left, 3 back, 4 right (tunable in `play.py`)
+### Velocity tracking
 
-- Also supports angular and linear velocity tracking.
+![Velocity tracking](media/speed_tracking.gif)
 
-## Run the exported model in mujoco (sim2sim)
+### Push recovery
 
-- After playing the model, the policy has already been saved. You can export the policy to mujoco environment and run it in mujoco [tron1-mujoco-sim]((https://github.com/limxdynamics/tron1-mujoco-sim)) by using the [tron1-rl-deploy-python]((https://github.com/limxdynamics/tron1-rl-deploy-python)).
+![Push recovery](media/push.gif)
 
-- Following the instructions to install it properly and replace the origin policy by your trained `policy.onnx` and `encoder.onnx`.
+## Deployment resources
 
-## Run the exported model in real robot (sim2real)
+- [TRON1 MuJoCo simulation](https://github.com/limxdynamics/tron1-mujoco-sim)
+- [TRON1 policy deployment tools](https://github.com/limxdynamics/tron1-rl-deploy-python)
+- [LimX Dynamics deployment guide](https://support.limxdynamics.com/docs/tron-1-sdk/rl-training-results-deployment)
 
-- Real deployment details see section https://support.limxdynamics.com/docs/tron-1-sdk/rl-training-results-deployment 8.1 ~ 8.2
+## Upstream code and references
 
-## Overview of the learning framework
+This repository is a fork of [81578823/RL_bipedal_locomotion_Isaaclab](https://github.com/81578823/RL_bipedal_locomotion_Isaaclab). Thanks to the upstream contributors for the locomotion learning framework.
 
-<p align="center">
-    <img alt="Figure2 of CTS" src="./media/learning_frame.png">
-</p>
+The learning framework draws on [Concurrent Teacher-Student Reinforcement Learning for Legged Locomotion](https://doi.org/10.1109/LRA.2024.3457379), H. Wang, H. Luo, W. Zhang, and H. Chen, 2024.
 
-- The policies are trained using PPO within an asymmetric actor-critic framework, with actions determined by history observations latent and proprioceptive observation. **Inspired by the paper CTS: Concurrent Teacher-Student Reinforcement Learning for Legged Locomotion. ([H. Wang, H. Luo, W. Zhang, and H. Chen (2024)](https://doi.org/10.1109/LRA.2024.3457379))**
-
-
-## Video Demonstration
-
-### Simulation in IsaacLab
-- **Multi-terrain traversal**  
-  ![multi-terrain-traversal](./media/multi-terrain-traversal.gif)
-
-- **High-accuracy speed tracking**  
-  ![speed tracking](./media/speed_tracking.gif)
-
-  <p align="left">
-      <img alt="CLEARLAB" src="./media/speed_tracking.PNG" height="317">
-  </p>
-
-- **High pushing tolerance**  
-  ![pushing](./media/push.gif)
+Report author: **Yitao Zeng**.
