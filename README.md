@@ -80,9 +80,10 @@ python scripts/rsl_rl/play.py \
   --task=Isaac-Limx-PF-Blind-Rough-Play-Near-v0 \
   --checkpoint_path=/path/to/checkpoint.pt \
   --num_envs=1 \
-  --video \
-  --video_length=800
+  --video
 ```
+
+The current playback script runs a fixed 400-step rollout; video recording follows that length.
 
 Keyboard controls:
 
